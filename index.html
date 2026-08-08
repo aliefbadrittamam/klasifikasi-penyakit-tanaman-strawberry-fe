@@ -4,39 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Klasifikasi Penyakit Tanaman Strawberry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%);
             min-height: 100vh;
             color: #e8f5e9;
-            padding: 2rem;
+            padding: 2rem 1rem;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 1.5rem;
+        .container { max-width: 640px; margin: 0 auto; }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header h1 {
             font-size: 1.8rem;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 0.25rem;
         }
+        .header .author {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* Card */
         .card {
             background: rgba(255,255,255,0.08);
             border-radius: 16px;
-            padding: 2rem;
+            padding: 1.75rem;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 1.25rem;
         }
+
+        /* Upload */
         .upload-zone {
-            border: 2px dashed rgba(255,255,255,0.4);
+            border: 2px dashed rgba(255,255,255,0.35);
             border-radius: 12px;
-            padding: 2rem;
+            padding: 2.5rem 1.5rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s;
             margin-bottom: 1rem;
         }
         .upload-zone:hover, .upload-zone.dragover {
@@ -44,79 +56,261 @@
             background: rgba(129,199,132,0.1);
         }
         .upload-zone input { display: none; }
+        .upload-zone .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .upload-zone p { font-size: 0.95rem; }
+        .upload-zone .hint { font-size: 0.8rem; opacity: 0.65; margin-top: 0.4rem; }
+
+        /* Preview */
+        .preview-wrap { position: relative; display: none; margin-bottom: 1rem; }
+        .preview-wrap.visible { display: block; }
+        .preview-wrap img {
+            width: 100%;
+            max-height: 320px;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+        .preview-wrap .remove {
+            position: absolute; top: 8px; right: 8px;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(0,0,0,0.6); border: none; color: white;
+            font-size: 16px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .preview-wrap .remove:hover { background: #ef5350; }
+
+        /* Button */
         .btn {
-            background: #388e3c;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 0.5rem;
+            display: block; width: 100%;
+            background: #388e3c; color: white; border: none;
+            padding: 0.85rem; border-radius: 10px; cursor: pointer;
+            font-size: 1rem; font-weight: 600; font-family: inherit;
+            transition: all 0.2s;
         }
-        .btn:hover { background: #2e7d32; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .preview {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 8px;
-            margin: 1rem 0;
+        .btn:hover { background: #2e7d32; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn.loading {
+            position: relative; pointer-events: none; opacity: 0.8;
+        }
+        .btn.loading::after {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            animation: sweep 1.5s infinite;
+        }
+        @keyframes sweep { 0% { left: -100%; } 100% { left: 100%; } }
+
+        /* Error */
+        .error-msg {
+            margin-top: 1rem; padding: 0.75rem 1rem;
+            background: rgba(239,83,80,0.15); border: 1px solid rgba(239,83,80,0.3);
+            border-radius: 8px; color: #ef9a9a; font-size: 0.85rem;
             display: none;
         }
-        .preview.visible { display: block; }
-        .result {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            display: none;
+        .error-msg.visible { display: block; }
+
+        /* Result Card */
+        .result-card { display: none; }
+        .result-card.visible { display: block; }
+
+        .result-header {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 1.25rem; padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .result.visible { display: block; }
-        .result h3 { margin-bottom: 0.5rem; color: #a5d6a7; }
-        .confidence-bar {
-            height: 8px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 0.5rem 0;
+        .result-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
         }
-        .confidence-fill {
-            height: 100%;
+        .result-icon.healthy { background: rgba(102,187,106,0.2); }
+        .result-icon.disease { background: rgba(255,167,38,0.2); }
+        .result-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
+        .result-class { font-size: 1.3rem; font-weight: 700; }
+
+        /* Confidence */
+        .confidence-section { margin-bottom: 1.25rem; }
+        .confidence-main {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.4rem;
+        }
+        .confidence-main span:first-child { font-size: 0.85rem; opacity: 0.8; }
+        .confidence-main .value { font-size: 1.1rem; font-weight: 700; color: #81c784; }
+        .bar { height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px; overflow: hidden; }
+        .bar-fill {
+            height: 100%; border-radius: 4px;
             background: linear-gradient(90deg, #66bb6a, #81c784);
-            transition: width 0.3s;
+            transition: width 0.6s ease;
         }
-        .error { color: #ef9a9a; margin-top: 0.5rem; }
-        .loading { opacity: 0.7; pointer-events: none; }
+
+        /* All Probabilities */
+        .probs-section { margin-bottom: 1.25rem; }
+        .probs-title {
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;
+            opacity: 0.6; margin-bottom: 0.75rem; font-weight: 600;
+        }
+        .prob-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+        .prob-name { width: 140px; font-size: 0.82rem; opacity: 0.85; flex-shrink: 0; }
+        .prob-bar-wrap { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .prob-bar {
+            height: 100%; border-radius: 3px;
+            background: rgba(129,199,132,0.5);
+            transition: width 0.5s ease;
+        }
+        .prob-bar.top { background: linear-gradient(90deg, #66bb6a, #81c784); }
+        .prob-val { width: 50px; text-align: right; font-size: 0.8rem; font-weight: 600; opacity: 0.8; }
+
+        /* Disease Info */
+        .info-section {
+            background: rgba(0,0,0,0.15);
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .info-section h4 {
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: #81c784; margin-bottom: 0.75rem; font-weight: 600;
+        }
+        .info-grid { display: grid; gap: 0.75rem; }
+        .info-item {}
+        .info-item .label {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+            opacity: 0.55; margin-bottom: 0.2rem; font-weight: 600;
+        }
+        .info-item .text { font-size: 0.85rem; line-height: 1.5; opacity: 0.9; }
+
+        /* Footer */
+        .footer {
+            text-align: center; margin-top: 1.5rem;
+            font-size: 0.72rem; opacity: 0.4;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 1rem 0.75rem; }
+            .header h1 { font-size: 1.4rem; }
+            .card { padding: 1.25rem; }
+            .prob-name { width: 110px; font-size: 0.75rem; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🍓 Klasifikasi Penyakit Tanaman Strawberry</h1>
-        <h3>Dibuat oleh : PUTRI REGINA TAMBUNAN</h3>
+        <div class="header">
+            <h1>🍓 Klasifikasi Penyakit Tanaman Strawberry</h1>
+            <p class="author">Dibuat oleh : PUTRI REGINA TAMBUNAN</p>
+        </div>
+
         <div class="card">
             <div class="upload-zone" id="uploadZone">
                 <input type="file" id="fileInput" accept="image/*">
+                <div class="icon">📷</div>
                 <p>Seret gambar ke sini atau klik untuk memilih</p>
-                <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem;">PNG, JPG, JPEG, GIF, WEBP (max 16MB)</p>
+                <p class="hint">PNG, JPG, JPEG, GIF, WEBP (max 16MB)</p>
             </div>
-            <img id="preview" class="preview" alt="Preview">
-            <div style="text-align: center;">
-                <button class="btn" id="predictBtn" disabled>Prediksi</button>
+
+            <div class="preview-wrap" id="previewWrap">
+                <img id="preview" alt="Preview">
+                <button class="remove" id="removeBtn">&times;</button>
             </div>
-            <div id="result" class="result"></div>
-            <div id="error" class="error"></div>
+
+            <button class="btn" id="predictBtn" disabled>
+                <span id="btnText">🔍 Prediksi Penyakit</span>
+            </button>
+
+            <div class="error-msg" id="errorMsg"></div>
+        </div>
+
+        <!-- Result -->
+        <div class="card result-card" id="resultCard">
+            <div class="result-header">
+                <div class="result-icon" id="resultIcon">🍃</div>
+                <div>
+                    <div class="result-label">Hasil Deteksi</div>
+                    <div class="result-class" id="resultClass"></div>
+                </div>
+            </div>
+
+            <div class="confidence-section">
+                <div class="confidence-main">
+                    <span>Tingkat Keyakinan</span>
+                    <span class="value" id="confValue"></span>
+                </div>
+                <div class="bar"><div class="bar-fill" id="confBar"></div></div>
+            </div>
+
+            <div class="probs-section">
+                <div class="probs-title">Probabilitas Semua Kelas</div>
+                <div id="probsList"></div>
+            </div>
+
+            <div class="info-section" id="infoSection">
+                <h4>📋 Informasi Penyakit</h4>
+                <div class="info-grid" id="infoGrid"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Model: GoogleNet (GoogLeNet) • Deep Learning Classification
         </div>
     </div>
 
     <script>
+        // Disease info database
+        const DISEASE_INFO = {
+            'Angular Leafspot': {
+                icon: '🔶',
+                nama: 'Bercak Daun Sudut (Angular Leafspot)',
+                penyebab: 'Bakteri Xanthomonas fragariae',
+                gejala: 'Bercak kecil bersudut pada daun berwarna hijau gelap yang berubah menjadi coklat kemerahan. Bercak tampak tembus cahaya jika dilihat dari bawah daun. Pada kondisi lembab, terlihat eksudat bakteri.',
+                penanganan: 'Gunakan bibit bebas penyakit, hindari irigasi sprinkler, aplikasi bakterisida tembaga, buang daun terinfeksi, rotasi tanaman.',
+                tingkat: 'Sedang - dapat menyebabkan kerusakan serius pada kondisi lembab'
+            },
+            'Leaf Mildew Powdery': {
+                icon: '🫧',
+                nama: 'Embun Tepung (Powdery Mildew)',
+                penyebab: 'Jamur Podosphaera aphanis',
+                gejala: 'Lapisan putih seperti tepung pada permukaan daun, terutama bagian bawah. Daun menggulung ke atas, tepi daun mengering dan berwarna kecoklatan. Buah bisa tertutup lapisan putih.',
+                penanganan: 'Tingkatkan sirkulasi udara, kurangi kelembaban, aplikasi fungisida sulfur atau myclobutanil, pangkas daun yang terinfeksi, pilih varietas tahan.',
+                tingkat: 'Tinggi - dapat menurunkan hasil produksi hingga 30%'
+            },
+            'Leaf Spot': {
+                icon: '🔴',
+                nama: 'Bercak Daun (Leaf Spot)',
+                penyebab: 'Jamur Mycosphaerella fragariae',
+                gejala: 'Bercak bulat kecil berwarna ungu-merah dengan pusat berwarna putih keabu-abuan. Bercak berdiameter 3-6 mm. Pada serangan berat, bercak bergabung dan daun mengering.',
+                penanganan: 'Buang daun terinfeksi, aplikasi fungisida (kaptan, mankozeb), hindari penyiraman dari atas, jaga jarak tanam, rotasi tanaman setiap 2-3 tahun.',
+                tingkat: 'Sedang - jarang menyebabkan kematian tanaman tapi menurunkan vigor'
+            },
+            'normal': {
+                icon: '✅',
+                nama: 'Tanaman Sehat (Normal)',
+                penyebab: '-',
+                gejala: 'Tidak ditemukan gejala penyakit. Daun berwarna hijau segar, tidak ada bercak, tidak ada lapisan abnormal pada permukaan daun.',
+                penanganan: 'Lanjutkan perawatan rutin: penyiraman teratur, pemupukan seimbang, pengendalian gulma, dan monitoring berkala untuk deteksi dini penyakit.',
+                tingkat: 'Tidak ada penyakit terdeteksi'
+            }
+        };
+
+        // DOM
         const uploadZone = document.getElementById('uploadZone');
         const fileInput = document.getElementById('fileInput');
+        const previewWrap = document.getElementById('previewWrap');
         const preview = document.getElementById('preview');
+        const removeBtn = document.getElementById('removeBtn');
         const predictBtn = document.getElementById('predictBtn');
-        const resultDiv = document.getElementById('result');
-        const errorDiv = document.getElementById('error');
+        const btnText = document.getElementById('btnText');
+        const resultCard = document.getElementById('resultCard');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultClass = document.getElementById('resultClass');
+        const confValue = document.getElementById('confValue');
+        const confBar = document.getElementById('confBar');
+        const probsList = document.getElementById('probsList');
+        const infoGrid = document.getElementById('infoGrid');
+        const errorMsg = document.getElementById('errorMsg');
         let selectedFile = null;
 
+        // Upload handlers
         uploadZone.addEventListener('click', () => fileInput.click());
         uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
         uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
@@ -127,58 +321,116 @@
         });
         fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
 
+        removeBtn.addEventListener('click', () => {
+            selectedFile = null;
+            previewWrap.classList.remove('visible');
+            predictBtn.disabled = true;
+            resultCard.classList.remove('visible');
+            errorMsg.classList.remove('visible');
+            fileInput.value = '';
+        });
+
         function handleFile(file) {
-            if (!file.type.startsWith('image/')) {
-                showError('Pilih file gambar');
-                return;
-            }
-            errorDiv.textContent = '';
-            resultDiv.classList.remove('visible');
+            if (!file.type.startsWith('image/')) { showError('Pilih file gambar yang valid'); return; }
+            if (file.size > 16 * 1024 * 1024) { showError('Ukuran file melebihi 16MB'); return; }
+            selectedFile = file;
+            errorMsg.classList.remove('visible');
+            resultCard.classList.remove('visible');
             const reader = new FileReader();
             reader.onload = (e) => {
                 preview.src = e.target.result;
-                preview.classList.add('visible');
+                previewWrap.classList.add('visible');
                 predictBtn.disabled = false;
-                selectedFile = file;
             };
             reader.readAsDataURL(file);
         }
 
         function showError(msg) {
-            errorDiv.textContent = msg;
-            resultDiv.classList.remove('visible');
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
         }
 
+        // Predict
         predictBtn.addEventListener('click', async () => {
-            const file = selectedFile || (fileInput.files.length ? fileInput.files[0] : null);
-            if (!file) return;
+            if (!selectedFile) return;
             predictBtn.disabled = true;
-            resultDiv.classList.remove('visible');
-            errorDiv.textContent = '';
-            resultDiv.parentElement.classList.add('loading');
+            predictBtn.classList.add('loading');
+            btnText.textContent = '⏳ Memproses...';
+            resultCard.classList.remove('visible');
+            errorMsg.classList.remove('visible');
 
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', selectedFile);
 
             try {
                 const res = await fetch('/api/predict', { method: 'POST', body: formData });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Prediksi gagal');
 
-                resultDiv.innerHTML = `
-                    <h3>Hasil: ${data.class}</h3>
-                    <p>Confidence: ${data.confidence}%</p>
-                    <div class="confidence-bar"><div class="confidence-fill" style="width:${data.confidence}%"></div></div>
-                    ${data.all_probs ? '<details><summary>Semua kelas</summary><pre style="margin-top:0.5rem;font-size:0.85rem;">' + JSON.stringify(data.all_probs, null, 2) + '</pre></details>' : ''}
-                `;
-                resultDiv.classList.add('visible');
+                showResult(data);
             } catch (err) {
-                showError(err.message);
+                showError(err.message || 'Gagal menghubungi server');
             } finally {
                 predictBtn.disabled = false;
-                resultDiv.parentElement.classList.remove('loading');
+                predictBtn.classList.remove('loading');
+                btnText.textContent = '🔍 Prediksi Penyakit';
             }
         });
+
+        function showResult(data) {
+            const cls = data.class;
+            const conf = data.confidence;
+            const info = DISEASE_INFO[cls] || DISEASE_INFO['normal'];
+            const isHealthy = cls === 'normal';
+
+            // Header
+            resultIcon.textContent = info.icon;
+            resultIcon.className = 'result-icon ' + (isHealthy ? 'healthy' : 'disease');
+            resultClass.textContent = info.nama;
+
+            // Confidence
+            confValue.textContent = conf + '%';
+            confBar.style.width = '0%';
+            setTimeout(() => { confBar.style.width = conf + '%'; }, 50);
+
+            // All probabilities as visual bars
+            if (data.all_probs) {
+                const sorted = Object.entries(data.all_probs).sort((a, b) => b[1] - a[1]);
+                const topClass = sorted[0][0];
+                probsList.innerHTML = sorted.map(([name, prob]) => {
+                    const displayName = DISEASE_INFO[name] ? DISEASE_INFO[name].nama.split('(')[0].trim() : name;
+                    const isTop = name === topClass;
+                    return `<div class="prob-row">
+                        <span class="prob-name">${displayName}</span>
+                        <div class="prob-bar-wrap"><div class="prob-bar ${isTop ? 'top' : ''}" style="width:${prob}%"></div></div>
+                        <span class="prob-val">${prob}%</span>
+                    </div>`;
+                }).join('');
+            }
+
+            // Disease info
+            infoGrid.innerHTML = `
+                <div class="info-item">
+                    <div class="label">Penyebab</div>
+                    <div class="text">${info.penyebab}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Gejala</div>
+                    <div class="text">${info.gejala}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Penanganan</div>
+                    <div class="text">${info.penanganan}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Tingkat Keparahan</div>
+                    <div class="text">${info.tingkat}</div>
+                </div>
+            `;
+
+            resultCard.classList.add('visible');
+            resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     </script>
 </body>
 </html>
