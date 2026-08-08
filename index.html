@@ -501,7 +501,8 @@
 
     <script>
         // === CONFIG ===
-        const API_BASE = 'http://210.79.190.219';
+        // Use relative URL - Vercel rewrites proxy /api/* to VPS backend
+        const API_BASE = '';
 
         // === DOM ===
         const uploadZone = document.getElementById('uploadZone');
